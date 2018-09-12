@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Jadwal Sholat</title>
+</head>
+<body>
+  <h1>Jadwal Sholat</h1>
+
+  <p><strong>Lokasi</strong></p>
+  <form id="location-form">
+    <input type="text" name="location" id="location">
+  </form>
+  <button onclick="getPrayTime()" >Get</button>
+
+  <div id="result">
+
+  </div>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
+  <script>
+    function getPrayTime() {
+
+      const locationField = document.getElementById("location")
+      const location = locationField.value
+
+      const encodedAddress = encodeURIComponent(location)
+      const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}`
+
+      let lat, lng, timestamp, addressLong
+
+      axios.get(geocodeUrl)
+        .then(res => {
+
+          lat = res.data.results[0].geometry.location.lat
+          lng = res.data.results[0].geometry.location.lng
+          let formattedAddress = res.data.results[0].formatted_address
+
+          let timestampUrl = 'http://api.aladhan.com/currentTimestamp?zone=Asia/Jakarta'
+
+          addressLong = `Address : ${formattedAddress}`
+          console.log(addressLong)
+
+          return axios.get(timestampUrl)
+        })
+        .then(res => {
+          timestamp = res.data.data
+
+          let prayTimeUrl = `http://api.aladhan.com/timings/${timestamp}?latitude=${lat}&longitude=${lng}&method=1`
+
+          return axios.get(prayTimeUrl)
+        })
+        .then(res => {
+          let prayTime = res.data.data.timings
+
+          console.log('Sholat Prayer Time : ')
+          console.log(`- Subuh : ${prayTime.Fajr}`)
+          console.log(`- Dzuhur : ${prayTime.Dhuhr}`)
+          console.log(`- 'Asar : ${prayTime.Asr}`)
+          console.log(`- Magrib : ${prayTime.Maghrib}`)
+          console.log(`- Isya' : ${prayTime.Isha}`)
+          console.log("==========================")
+
+          var alertText = addressLong + "\n"
+          alertText += 'Sholat Prayer Time : \n'
+          alertText += `- Subuh : ${prayTime.Fajr}\n`
+          alertText += `- Dzuhur : ${prayTime.Dhuhr}\n`
+          alertText += `- 'Asar : ${prayTime.Asr}\n`
+          alertText += `- Magrib : ${prayTime.Maghrib}\n`
+          alertText += `- Isya' : ${prayTime.Isha}\n`
+          alert(alertText)
+
+          locationField.value = ""
+        })
+        .catch(err => {
+          alert("Error tidak dapat mendapatkan jadwal")
+          console.log(err)
+        })
+    }
+    
+  </script>
+</body>
+</html>
